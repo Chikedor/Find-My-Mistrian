@@ -34,6 +34,12 @@ No schedule table, weather rule, festival rule, or NPC-location cache is used. T
 
 ## Automated validation
 
+### Diagnostic logging contract
+
+- MOMI/MMAPI 0.15.1 defaults its shared logging threshold to `Info`; `Debug` lines are discarded unless `log_level` is changed globally in `mod_data/mmapi/mmapi.json`.
+- `Info` and `Debug` lines are buffered until 20 pending lines unless the mod calls `mmapi_log_flush(mod_name)`; `Warn` and `Error` flush immediately.
+- Find My Mistrian 0.2.1 therefore treats its own `debug_logging` option as explicit opt-in, emits diagnostic transactions at `Info`, and flushes once after each locate/highlight boundary. It does not alter MMAPI's global logging level or affect other mods.
+
 The official MOMI 0.15.1 CLI was run with:
 
 ```powershell
@@ -43,7 +49,7 @@ ModsOfMistriaInstaller-cli.exe --lint .\find_my_mistrian C:\path\to\assets.zip -
 Result:
 
 ```text
-lint chikedor.find_my_mistrian v0.2.0
+lint chikedor.find_my_mistrian v0.2.1
   gml: 1 file(s) installing under scripts/chikedor_find_my_mistrian/
   RESULT: OK - the apply would install this mod
 ```

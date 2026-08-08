@@ -2,7 +2,7 @@
 // Fields of Mistria 1.0.x / MOMI + MMAPI 0.14.1+
 
 #macro FIND_MY_MISTRIAN_CONFIG_VERSION 1
-#macro FIND_MY_MISTRIAN_VERSION "0.2.0"
+#macro FIND_MY_MISTRIAN_VERSION "0.2.1"
 
 // Layout values are local to their vanilla anchors, never screen coordinates.
 #macro FMM_RELATION_LOCATION_BUTTON_HEIGHT 20
@@ -19,8 +19,11 @@ function __find_my_mistrian_runtime() {
             config: undefined,
             hotkey_registered: false,
             pending_map_npc_id: undefined,
+            pending_map_source: undefined,
             highlight_node: undefined,
+            highlight_npc_id: undefined,
             highlight_original_alpha: 1,
+            highlight_started_at: 0,
             highlight_ends_at: 0,
         };
     }
@@ -56,7 +59,18 @@ function find_my_mistrian_config() {
 
 function find_my_mistrian_debug(_message) {
     if (find_my_mistrian_config().debug_logging) {
-        mmapi_log_debug("find_my_mistrian", "[FMM] " + _message);
+        // The mod-level switch is explicit user consent for diagnostics. Log
+        // at Info so MMAPI's default global Info threshold does not discard
+        // the line before it reaches this mod's buffer.
+        mmapi_log_info("find_my_mistrian", "[FMM] " + _message);
+    }
+}
+
+function find_my_mistrian_debug_flush() {
+    if (find_my_mistrian_config().debug_logging && mmapi_io_is_ready()) {
+        // MMAPI batches Info/Debug lines in groups of 20. A locate attempt is
+        // infrequent and must be inspectable immediately after it fails.
+        mmapi_log_flush("find_my_mistrian");
     }
 }
 
@@ -87,13 +101,18 @@ function find_my_mistrian_tick() {
             "find_my_mistrian",
             "[FMM] Ready. Live location source: NPCS[npc_id].location_position",
         );
+        find_my_mistrian_debug_flush();
     }
 
     if (_rt.highlight_node == undefined) {
         return;
     }
-    if (_rt.highlight_node.freed || current_time() >= _rt.highlight_ends_at) {
-        find_my_mistrian_clear_highlight();
+    if (_rt.highlight_node.freed) {
+        find_my_mistrian_clear_highlight("node_freed");
+        return;
+    }
+    if (current_time() >= _rt.highlight_ends_at) {
+        find_my_mistrian_clear_highlight("duration_complete");
         return;
     }
 
@@ -136,7 +155,7 @@ function find_my_mistrian_on_menu_opened(_ctx) {
 
 function find_my_mistrian_on_menu_closed(_ctx) {
     if (_ctx.kind == Menu.Map) {
-        find_my_mistrian_clear_highlight();
+        find_my_mistrian_clear_highlight("map_closed");
     }
 }
 
@@ -259,7 +278,10 @@ function find_my_mistrian_decorate_relationships(_menu) {
         .add_hover_outline()
         .add_to_pilot(_location_pilot)
         .set_tap_callback(function(_relationships_menu) {
-            find_my_mistrian_locate_npc_on_map(_relationships_menu.npc_id_current);
+            find_my_mistrian_locate_npc_on_map(
+                _relationships_menu.npc_id_current,
+                "relationships",
+            );
         }, [_menu]);
 
     _button.text_label
@@ -428,7 +450,7 @@ function find_my_mistrian_add_quest_locator(_quest_menu, _npc_id) {
         .add_hover_outline()
         .add_to_pilot(_quest_menu.right_pilot, true)
         .set_tap_callback(function(_target_npc_id) {
-            find_my_mistrian_locate_npc_on_map(_target_npc_id);
+            find_my_mistrian_locate_npc_on_map(_target_npc_id, "quest");
         }, [_npc_id]);
 
     _button.text_label
@@ -480,7 +502,7 @@ function find_my_mistrian_update_quest_locator(_control, _npc_id) {
     _control.element.enable();
     _control.button.text_label.set_key(find_my_mistrian_quest_button_key(_npc_id));
     _control.button.set_tap_callback(function(_target_npc_id) {
-        find_my_mistrian_locate_npc_on_map(_target_npc_id);
+        find_my_mistrian_locate_npc_on_map(_target_npc_id, "quest");
     }, [_npc_id], true);
     _control.button.set_think_callback(function(_quest_button, _target_npc_id) {
         find_my_mistrian_show_locate_action_hint(_quest_button, _target_npc_id);
@@ -560,20 +582,33 @@ function find_my_mistrian_decorate_quest_log(_menu) {
     }, [_watcher, _menu]);
 }
 
-function find_my_mistrian_locate_npc_on_map(_npc_id) {
+function find_my_mistrian_locate_npc_on_map(_npc_id, _source) {
+    find_my_mistrian_debug(
+        "Locate requested: source=" + string(_source)
+        + " npc=" + npc_id_to_string(_npc_id)
+        + " frame=" + string(TICK),
+    );
+
     var _location_result = find_my_mistrian_get_npc_location(_npc_id);
     var _display = find_my_mistrian_get_location_display_name(_location_result);
     if (_location_result == undefined || _display == undefined) {
+        find_my_mistrian_debug("Locate rejected: no usable live location");
+        find_my_mistrian_debug_flush();
         create_notification("mods/find_my_mistrian/ui/cannot_locate");
         return;
     }
 
-    find_my_mistrian_debug("Selected NPC: " + npc_id_to_string(_npc_id));
-    find_my_mistrian_debug("NPC location source: NPCS[npc_id].location_position");
-    find_my_mistrian_debug("Current area: " + location_id_to_string(_location_result.location_id));
+    find_my_mistrian_debug(
+        "Live location resolved: area="
+        + location_id_to_string(_location_result.location_id)
+        + " map=" + location_id_to_string(_location_result.map_location_id)
+        + " dyn_index=" + string(_location_result.position.dyn_index),
+    );
 
     var _cfg = find_my_mistrian_config();
     if (!_cfg.open_map_after_locating) {
+        find_my_mistrian_debug("Map opening disabled by configuration");
+        find_my_mistrian_debug_flush();
         create_notification(ANCHOR.wrap_for_local(
             local_get(NPC_PROTOTYPES[_npc_id].name) + ": " + _display.text,
         ));
@@ -582,29 +617,50 @@ function find_my_mistrian_locate_npc_on_map(_npc_id) {
 
     var _rt = __find_my_mistrian_runtime();
     _rt.pending_map_npc_id = _npc_id;
+    _rt.pending_map_source = _source;
     var _journal = ANCHOR.get_menu(Menu.Journal);
     if (_journal == undefined) {
+        find_my_mistrian_debug("Journal absent; spawning vanilla Journal");
         _journal = ANCHOR.spawn_menu(Menu.Journal);
     }
     if (_journal != undefined) {
+        find_my_mistrian_debug("Map request queued");
+        find_my_mistrian_debug_flush();
         _journal.set_active_sub_menu(Menu.Map);
+    } else {
+        find_my_mistrian_debug("Map request failed: Journal unavailable");
+        find_my_mistrian_debug_flush();
     }
 }
 
 function find_my_mistrian_apply_pending_map_focus(_map_menu) {
     var _rt = __find_my_mistrian_runtime();
     var _npc_id = _rt.pending_map_npc_id;
+    var _source = _rt.pending_map_source;
     _rt.pending_map_npc_id = undefined;
+    _rt.pending_map_source = undefined;
     if (_npc_id == undefined) {
         return;
     }
 
+    find_my_mistrian_debug(
+        "Map opened for pending locate: source=" + string(_source)
+        + " npc=" + npc_id_to_string(_npc_id)
+        + " frame=" + string(TICK),
+    );
+
     var _location_result = find_my_mistrian_get_npc_location(_npc_id);
     if (_location_result == undefined) {
+        find_my_mistrian_debug("Pending locate aborted: live location became unavailable");
+        find_my_mistrian_debug_flush();
         return;
     }
 
     _map_menu.select_location(_location_result.map_location_id);
+    find_my_mistrian_debug(
+        "Map region selected: "
+        + location_id_to_string(_location_result.map_location_id),
+    );
     find_my_mistrian_highlight_icon(_map_menu, _npc_id);
 }
 
@@ -621,32 +677,70 @@ function find_my_mistrian_find_sprite_node(_node, _sprite) {
     return undefined;
 }
 
+function find_my_mistrian_count_sprite_nodes(_node, _sprite) {
+    var _count = (_node.type == NodeId.Sprite && _node.sprite == _sprite) ? 1 : 0;
+    for (var _i = 0; _i < array_length(_node.children); _i++) {
+        _count += find_my_mistrian_count_sprite_nodes(_node.children[_i], _sprite);
+    }
+    return _count;
+}
+
 function find_my_mistrian_highlight_icon(_map_menu, _npc_id) {
-    find_my_mistrian_clear_highlight();
+    find_my_mistrian_clear_highlight("replaced");
+    var _sprite = get_small_npc_icon(_npc_id);
+    var _match_count = find_my_mistrian_count_sprite_nodes(_map_menu.map, _sprite);
     var _icon = find_my_mistrian_find_sprite_node(
         _map_menu.map,
-        get_small_npc_icon(_npc_id),
+        _sprite,
     );
-    find_my_mistrian_debug("Map icon resolved: " + string(_icon != undefined));
+    find_my_mistrian_debug(
+        "Map icon search: npc=" + npc_id_to_string(_npc_id)
+        + " matches=" + string(_match_count)
+        + " resolved=" + string(_icon != undefined),
+    );
     if (_icon == undefined) {
+        find_my_mistrian_debug_flush();
         return;
     }
 
     var _rt = __find_my_mistrian_runtime();
     _rt.highlight_node = _icon;
+    _rt.highlight_npc_id = _npc_id;
     _rt.highlight_original_alpha = _icon.alpha;
+    _rt.highlight_started_at = current_time();
     _rt.highlight_ends_at = current_time()
         + (find_my_mistrian_config().highlight_duration * 1000);
+    find_my_mistrian_debug(
+        "Highlight started: x=" + string(_icon.get_x())
+        + " y=" + string(_icon.get_y())
+        + " alpha=" + string(_rt.highlight_original_alpha)
+        + " duration_ms="
+        + string(find_my_mistrian_config().highlight_duration * 1000),
+    );
+    find_my_mistrian_debug_flush();
 }
 
-function find_my_mistrian_clear_highlight() {
+function find_my_mistrian_clear_highlight(_reason) {
     var _rt = __find_my_mistrian_runtime();
+    if (_rt.highlight_node == undefined) {
+        return;
+    }
+
     if (_rt.highlight_node != undefined && !_rt.highlight_node.freed) {
         _rt.highlight_node.set_alpha(_rt.highlight_original_alpha);
     }
+    find_my_mistrian_debug(
+        "Highlight ended: reason=" + string(_reason)
+        + " npc=" + npc_id_to_string(_rt.highlight_npc_id)
+        + " elapsed_ms=" + string(current_time() - _rt.highlight_started_at)
+        + " node_freed=" + string(_rt.highlight_node.freed),
+    );
     _rt.highlight_node = undefined;
+    _rt.highlight_npc_id = undefined;
     _rt.highlight_original_alpha = 1;
+    _rt.highlight_started_at = 0;
     _rt.highlight_ends_at = 0;
+    find_my_mistrian_debug_flush();
 }
 
 mmapi_mod_declare("find_my_mistrian", FIND_MY_MISTRIAN_VERSION);

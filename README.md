@@ -99,7 +99,7 @@ Default configuration:
 | `highlight_duration` | Icon pulse duration, from 1 to 10 seconds. |
 | `open_map_after_locating` | Opens the map automatically after selecting the locate button. |
 | `hotkey` | A single MMAPI key name, such as `F6` or `HOME`. |
-| `debug_logging` | Writes useful diagnostic events to the mod log when set to `true`. |
+| `debug_logging` | Immediately writes each locate attempt and highlight lifecycle to the mod log when set to `true`. |
 
 Close the game before editing the configuration file.
 
@@ -136,6 +136,8 @@ Set `debug_logging` to `true`, reproduce the problem, and inspect:
 ```text
 %LOCALAPPDATA%\FieldsOfMistria\mod_data\find_my_mistrian\logs\find_my_mistrian.log
 ```
+
+The log records whether the action came from Relationships or Quests, the NPC and live map region, the number of matching icon nodes, whether highlighting started, and why it ended. Find My Mistrian logs these opt-in diagnostics at MMAPI's default `Info` level and flushes after every locate attempt, so editing MMAPI's global `mmapi.json` is neither required nor recommended.
 
 ### Compatibility
 
@@ -248,7 +250,7 @@ Configuración predeterminada:
 | `highlight_duration` | Duración del parpadeo del icono, entre 1 y 10 segundos. |
 | `open_map_after_locating` | Abre el mapa automáticamente al seleccionar el botón de localización. |
 | `hotkey` | Nombre de una sola tecla de MMAPI, como `F6` o `HOME`. |
-| `debug_logging` | Registra eventos de diagnóstico útiles cuando su valor es `true`. |
+| `debug_logging` | Escribe inmediatamente cada intento de localización y el ciclo del resaltado cuando su valor es `true`. |
 
 Cierra el juego antes de editar el archivo de configuración.
 
@@ -285,6 +287,8 @@ Cambia `debug_logging` a `true`, reproduce el problema y revisa:
 ```text
 %LOCALAPPDATA%\FieldsOfMistria\mod_data\find_my_mistrian\logs\find_my_mistrian.log
 ```
+
+El registro indica si la acción procede de Relaciones o Misiones, el NPC y la región actual, cuántos nodos de icono coinciden, si comenzó el resaltado y por qué terminó. Find My Mistrian registra estos diagnósticos voluntarios con el nivel `Info` predeterminado de MMAPI y fuerza el guardado tras cada intento, por lo que no es necesario ni recomendable editar el `mmapi.json` global de MMAPI.
 
 ### Compatibilidad
 

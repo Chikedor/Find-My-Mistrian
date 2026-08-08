@@ -49,7 +49,7 @@ Defaults:
 }
 ```
 
-`highlight_duration` accepts 1–10 seconds. `hotkey` accepts a single MMAPI key name such as `F6` or `HOME`. Set `debug_logging` to `true` to record selected NPC, current location id, source, and map-icon resolution without logging every frame.
+`highlight_duration` accepts 1–10 seconds. `hotkey` accepts a single MMAPI key name such as `F6` or `HOME`. Set `debug_logging` to `true` to record the entry point, selected NPC, live location, map region, icon-match count, highlight lifecycle, and failure reason without logging every frame. Each locate attempt is flushed immediately to `mod_data/find_my_mistrian/logs/find_my_mistrian.log`; no global MMAPI log-level change is required.
 
 ## Localization
 
