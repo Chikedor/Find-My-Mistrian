@@ -2,7 +2,7 @@
 // Fields of Mistria 1.0.x / MOMI + MMAPI 0.14.1+
 
 #macro FIND_MY_MISTRIAN_CONFIG_VERSION 1
-#macro FIND_MY_MISTRIAN_VERSION "0.2.1"
+#macro FIND_MY_MISTRIAN_VERSION "0.2.2"
 
 // Layout values are local to their vanilla anchors, never screen coordinates.
 #macro FMM_RELATION_LOCATION_BUTTON_HEIGHT 20
@@ -10,6 +10,7 @@
 #macro FMM_QUEST_LOCATE_ELEMENT_HEIGHT 28
 #macro FMM_QUEST_LOCATE_BUTTON_WIDTH 128
 #macro FMM_QUEST_LOCATE_BUTTON_HEIGHT 20
+#macro FMM_HIGHLIGHT_RESOLVE_MAX_ATTEMPTS 30
 
 function __find_my_mistrian_runtime() {
     if (global[$ "__find_my_mistrian"] == undefined) {
@@ -20,7 +21,13 @@ function __find_my_mistrian_runtime() {
             hotkey_registered: false,
             pending_map_npc_id: undefined,
             pending_map_source: undefined,
+            pending_highlight_map_root: undefined,
+            pending_highlight_npc_id: undefined,
+            pending_highlight_attempts: 0,
+            pending_highlight_started_at: 0,
+            pending_highlight_ends_at: 0,
             highlight_node: undefined,
+            highlight_map_root: undefined,
             highlight_npc_id: undefined,
             highlight_original_alpha: 1,
             highlight_started_at: 0,
@@ -104,11 +111,13 @@ function find_my_mistrian_tick() {
         find_my_mistrian_debug_flush();
     }
 
+    find_my_mistrian_process_pending_highlight();
+
     if (_rt.highlight_node == undefined) {
         return;
     }
     if (_rt.highlight_node.freed) {
-        find_my_mistrian_clear_highlight("node_freed");
+        find_my_mistrian_reacquire_highlight("node_freed");
         return;
     }
     if (current_time() >= _rt.highlight_ends_at) {
@@ -155,6 +164,7 @@ function find_my_mistrian_on_menu_opened(_ctx) {
 
 function find_my_mistrian_on_menu_closed(_ctx) {
     if (_ctx.kind == Menu.Map) {
+        find_my_mistrian_cancel_pending_highlight("map_closed");
         find_my_mistrian_clear_highlight("map_closed");
     }
 }
@@ -656,15 +666,30 @@ function find_my_mistrian_apply_pending_map_focus(_map_menu) {
         return;
     }
 
-    _map_menu.select_location(_location_result.map_location_id);
-    find_my_mistrian_debug(
-        "Map region selected: "
-        + location_id_to_string(_location_result.map_location_id),
-    );
-    find_my_mistrian_highlight_icon(_map_menu, _npc_id);
+    var _target_map_id = _location_result.map_location_id;
+    if (_map_menu.selected_location_id == _target_map_id) {
+        find_my_mistrian_debug(
+            "Map region already selected; preserving current icon tree: "
+            + location_id_to_string(_target_map_id),
+        );
+    } else {
+        _map_menu.select_location(_target_map_id);
+        find_my_mistrian_debug(
+            "Map region selected and icon tree rebuilt: "
+            + location_id_to_string(_target_map_id),
+        );
+    }
+
+    // MapMenu.select_location() frees the previous tree lazily. Resolve from
+    // the next MMAPI tick, when stale nodes are marked freed, and retry while
+    // the replacement tree settles instead of selecting the first duplicate.
+    find_my_mistrian_schedule_highlight(_map_menu.map, _npc_id);
 }
 
 function find_my_mistrian_find_sprite_node(_node, _sprite) {
+    if (_node.freed) {
+        return undefined;
+    }
     if (_node.type == NodeId.Sprite && _node.sprite == _sprite) {
         return _node;
     }
@@ -678,6 +703,9 @@ function find_my_mistrian_find_sprite_node(_node, _sprite) {
 }
 
 function find_my_mistrian_count_sprite_nodes(_node, _sprite) {
+    if (_node.freed) {
+        return 0;
+    }
     var _count = (_node.type == NodeId.Sprite && _node.sprite == _sprite) ? 1 : 0;
     for (var _i = 0; _i < array_length(_node.children); _i++) {
         _count += find_my_mistrian_count_sprite_nodes(_node.children[_i], _sprite);
@@ -685,38 +713,153 @@ function find_my_mistrian_count_sprite_nodes(_node, _sprite) {
     return _count;
 }
 
-function find_my_mistrian_highlight_icon(_map_menu, _npc_id) {
+function find_my_mistrian_schedule_highlight(_map_root, _npc_id) {
+    find_my_mistrian_cancel_pending_highlight("replaced");
     find_my_mistrian_clear_highlight("replaced");
-    var _sprite = get_small_npc_icon(_npc_id);
-    var _match_count = find_my_mistrian_count_sprite_nodes(_map_menu.map, _sprite);
-    var _icon = find_my_mistrian_find_sprite_node(
-        _map_menu.map,
-        _sprite,
-    );
+    var _rt = __find_my_mistrian_runtime();
+    _rt.pending_highlight_map_root = _map_root;
+    _rt.pending_highlight_npc_id = _npc_id;
+    _rt.pending_highlight_attempts = 0;
+    _rt.pending_highlight_started_at = 0;
+    _rt.pending_highlight_ends_at = 0;
     find_my_mistrian_debug(
-        "Map icon search: npc=" + npc_id_to_string(_npc_id)
-        + " matches=" + string(_match_count)
-        + " resolved=" + string(_icon != undefined),
+        "Highlight resolution scheduled for next frame: npc="
+        + npc_id_to_string(_npc_id),
     );
-    if (_icon == undefined) {
-        find_my_mistrian_debug_flush();
+    find_my_mistrian_debug_flush();
+}
+
+function find_my_mistrian_process_pending_highlight() {
+    var _rt = __find_my_mistrian_runtime();
+    var _npc_id = _rt.pending_highlight_npc_id;
+    if (_npc_id == undefined) {
         return;
     }
 
-    var _rt = __find_my_mistrian_runtime();
+    var _map_root = _rt.pending_highlight_map_root;
+    if (_map_root == undefined || _map_root.freed) {
+        find_my_mistrian_cancel_pending_highlight("map_root_freed");
+        return;
+    }
+
+    if (_rt.pending_highlight_ends_at > 0
+        && current_time() >= _rt.pending_highlight_ends_at)
+    {
+        find_my_mistrian_debug(
+            "Highlight ended while reacquiring: reason=duration_complete"
+            + " npc=" + npc_id_to_string(_npc_id)
+            + " elapsed_ms="
+            + string(current_time() - _rt.pending_highlight_started_at),
+        );
+        find_my_mistrian_cancel_pending_highlight("duration_complete");
+        return;
+    }
+
+    _rt.pending_highlight_attempts += 1;
+    var _attempt = _rt.pending_highlight_attempts;
+    var _sprite = get_small_npc_icon(_npc_id);
+    var _match_count = find_my_mistrian_count_sprite_nodes(_map_root, _sprite);
+    find_my_mistrian_debug(
+        "Map icon resolve attempt=" + string(_attempt)
+        + " npc=" + npc_id_to_string(_npc_id)
+        + " matches=" + string(_match_count)
+    );
+
+    if (_match_count != 1) {
+        if (_attempt < FMM_HIGHLIGHT_RESOLVE_MAX_ATTEMPTS) {
+            return;
+        }
+        find_my_mistrian_debug(
+            "Highlight resolution exhausted: expected one stable icon",
+        );
+        find_my_mistrian_cancel_pending_highlight("attempts_exhausted");
+        return;
+    }
+
+    var _icon = find_my_mistrian_find_sprite_node(_map_root, _sprite);
+    if (_icon == undefined || _icon.freed) {
+        if (_attempt < FMM_HIGHLIGHT_RESOLVE_MAX_ATTEMPTS) {
+            return;
+        }
+        find_my_mistrian_cancel_pending_highlight("stable_icon_unavailable");
+        return;
+    }
+
+    var _resume_started_at = _rt.pending_highlight_started_at;
+    var _resume_ends_at = _rt.pending_highlight_ends_at;
+    _rt.pending_highlight_map_root = undefined;
+    _rt.pending_highlight_npc_id = undefined;
+    _rt.pending_highlight_attempts = 0;
+    _rt.pending_highlight_started_at = 0;
+    _rt.pending_highlight_ends_at = 0;
+
     _rt.highlight_node = _icon;
+    _rt.highlight_map_root = _map_root;
     _rt.highlight_npc_id = _npc_id;
     _rt.highlight_original_alpha = _icon.alpha;
-    _rt.highlight_started_at = current_time();
-    _rt.highlight_ends_at = current_time()
-        + (find_my_mistrian_config().highlight_duration * 1000);
+    if (_resume_ends_at > current_time()) {
+        _rt.highlight_started_at = _resume_started_at;
+        _rt.highlight_ends_at = _resume_ends_at;
+    } else {
+        _rt.highlight_started_at = current_time();
+        _rt.highlight_ends_at = current_time()
+            + (find_my_mistrian_config().highlight_duration * 1000);
+    }
     find_my_mistrian_debug(
-        "Highlight started: x=" + string(_icon.get_x())
+        (_resume_ends_at > current_time()
+            ? "Highlight resumed on replacement icon: attempt="
+            : "Highlight started from stable icon: attempt=")
+        + string(_attempt)
+        + " x=" + string(_icon.get_x())
         + " y=" + string(_icon.get_y())
         + " alpha=" + string(_rt.highlight_original_alpha)
-        + " duration_ms="
-        + string(find_my_mistrian_config().highlight_duration * 1000),
+        + " remaining_ms=" + string(_rt.highlight_ends_at - current_time()),
     );
+    find_my_mistrian_debug_flush();
+}
+
+function find_my_mistrian_cancel_pending_highlight(_reason) {
+    var _rt = __find_my_mistrian_runtime();
+    if (_rt.pending_highlight_npc_id == undefined) {
+        return;
+    }
+
+    find_my_mistrian_debug(
+        "Pending highlight cancelled: reason=" + string(_reason)
+        + " npc=" + npc_id_to_string(_rt.pending_highlight_npc_id)
+        + " attempts=" + string(_rt.pending_highlight_attempts),
+    );
+    _rt.pending_highlight_map_root = undefined;
+    _rt.pending_highlight_npc_id = undefined;
+    _rt.pending_highlight_attempts = 0;
+    _rt.pending_highlight_started_at = 0;
+    _rt.pending_highlight_ends_at = 0;
+    find_my_mistrian_debug_flush();
+}
+
+function find_my_mistrian_reacquire_highlight(_reason) {
+    var _rt = __find_my_mistrian_runtime();
+    if (_rt.highlight_node == undefined) {
+        return;
+    }
+
+    find_my_mistrian_debug(
+        "Highlight node invalidated; scheduling reacquisition: reason="
+        + string(_reason)
+        + " npc=" + npc_id_to_string(_rt.highlight_npc_id)
+        + " elapsed_ms=" + string(current_time() - _rt.highlight_started_at),
+    );
+    _rt.pending_highlight_map_root = _rt.highlight_map_root;
+    _rt.pending_highlight_npc_id = _rt.highlight_npc_id;
+    _rt.pending_highlight_attempts = 0;
+    _rt.pending_highlight_started_at = _rt.highlight_started_at;
+    _rt.pending_highlight_ends_at = _rt.highlight_ends_at;
+    _rt.highlight_node = undefined;
+    _rt.highlight_map_root = undefined;
+    _rt.highlight_npc_id = undefined;
+    _rt.highlight_original_alpha = 1;
+    _rt.highlight_started_at = 0;
+    _rt.highlight_ends_at = 0;
     find_my_mistrian_debug_flush();
 }
 
@@ -736,6 +879,7 @@ function find_my_mistrian_clear_highlight(_reason) {
         + " node_freed=" + string(_rt.highlight_node.freed),
     );
     _rt.highlight_node = undefined;
+    _rt.highlight_map_root = undefined;
     _rt.highlight_npc_id = undefined;
     _rt.highlight_original_alpha = 1;
     _rt.highlight_started_at = 0;

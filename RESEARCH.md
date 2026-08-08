@@ -40,6 +40,13 @@ No schedule table, weather rule, festival rule, or NPC-location cache is used. T
 - `Info` and `Debug` lines are buffered until 20 pending lines unless the mod calls `mmapi_log_flush(mod_name)`; `Warn` and `Error` flush immediately.
 - Find My Mistrian 0.2.1 therefore treats its own `debug_logging` option as explicit opt-in, emits diagnostic transactions at `Info`, and flushes once after each locate/highlight boundary. It does not alter MMAPI's global logging level or affect other mods.
 
+### Duplicate map-icon lifecycle
+
+- A live 0.2.1 trace captured three Juniper failures with `matches=2`; the chosen node was freed 7–10 ms after highlighting began.
+- Vanilla `MapMenu.select_location()` calls `ANCHOR.free_children(self.map)` before rebuilding the selected region. Freed children remain discoverable until the following frame, so an immediate sprite search can select the stale copy when the NPC exists in both the initial and rebuilt map tree.
+- Version 0.2.2 avoids rebuilding an already-selected region. After any selection it resolves on subsequent MMAPI ticks, ignores freed nodes, requires exactly one stable match, and retries for at most 30 frames. If vanilla invalidates the selected node later, the remaining pulse duration is transferred to a newly resolved live icon.
+- The final in-game Juniper reproduction resolved one stable match on the first deferred attempt and completed the configured pulse in 10,014 ms with `node_freed=false`.
+
 The official MOMI 0.15.1 CLI was run with:
 
 ```powershell
@@ -49,7 +56,7 @@ ModsOfMistriaInstaller-cli.exe --lint .\find_my_mistrian C:\path\to\assets.zip -
 Result:
 
 ```text
-lint chikedor.find_my_mistrian v0.2.1
+lint chikedor.find_my_mistrian v0.2.2
   gml: 1 file(s) installing under scripts/chikedor_find_my_mistrian/
   RESULT: OK - the apply would install this mod
 ```

@@ -1,7 +1,7 @@
 {
   "name": "Find My Mistrian",
   "author": "Chikedor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Locates known villagers from Relationships and active NPC quest objectives.",
   "minInstallerVersion": "0.14.1",
   "manifestVersion": 1,

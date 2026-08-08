@@ -163,6 +163,8 @@ The location readout uses `NPCS[npc_id].location_position`, which is also consum
 
 Quest targets come from `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Only structured `QuestQueryType.Npc` targets whose vanilla requirements currently pass are eligible; the mod never parses localized objective text and never assumes that `npc_for_icon` is the current target. The map highlight reuses the character's existing small NPC icon and temporarily changes only its alpha; the original value is restored when the timer expires or the map closes.
 
+After a map-region change, icon resolution is deferred until vanilla's replacement tree contains exactly one stable, non-freed match. The mod retries for up to 30 frames, avoids rebuilding a region that is already selected, and reacquires the live icon if vanilla replaces it during the pulse. This prevents stale duplicate icons from terminating the highlight immediately.
+
 Automated validation against Fields of Mistria 1.0.2 completed successfully with strict linting, compile checks, and seam checks using MOMI 0.15.1.
 
 ---
@@ -313,6 +315,8 @@ El mod no modifica las partidas guardadas, por lo que no es necesario limpiarlas
 La ubicación utiliza `NPCS[npc_id].location_position`, el mismo estado que consulta el mapa original. La protección contra spoilers usa el estado persistente `NPCS[npc_id].has_met()`, que vanilla activa después de una primera conversación válida; no usa los corazones ni la mera presencia en Relaciones.
 
 Los objetivos de misión proceden de `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Solo se admiten objetivos estructurados `QuestQueryType.Npc` cuyos requisitos vanilla ya se cumplen; el mod nunca analiza el texto traducido del objetivo ni presupone que `npc_for_icon` sea el personaje actual. El resaltado reutiliza el icono pequeño existente del personaje y solo modifica temporalmente su opacidad; el valor original se restaura al terminar el tiempo o cerrar el mapa.
+
+Después de cambiar la región del mapa, la resolución del icono se aplaza hasta que el árbol nuevo de vanilla contenga una sola coincidencia estable y no liberada. El mod reintenta durante un máximo de 30 fotogramas, evita reconstruir una región que ya está seleccionada y vuelve a adquirir el icono vigente si vanilla lo reemplaza durante el pulso. Así se impide que los duplicados obsoletos terminen el resaltado inmediatamente.
 
 La validación automatizada contra Fields of Mistria 1.0.2 terminó correctamente con linting estricto, comprobación de compilación y verificación de puntos de inserción mediante MOMI 0.15.1.
 

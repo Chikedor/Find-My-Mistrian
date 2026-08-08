@@ -4,6 +4,8 @@ Find My Mistrian is a small quality-of-life mod for Fields of Mistria. It adds a
 
 The mod reads `NPCS[npc_id].location_position`, the same current-state data used by the vanilla map. It does not calculate or ship NPC schedules.
 
+Map highlighting waits for the selected region's icon tree to become stable, ignores stale nodes, and reacquires the live icon if vanilla rebuilds the tree during the pulse. This prevents dense maps from terminating the highlight on an obsolete duplicate icon.
+
 ## Requirements
 
 - Fields of Mistria 1.0.x
