@@ -6,6 +6,10 @@
 
 [English](#english) · [Español](#español)
 
+![Find My Mistrian showing Juniper's live location in the Spanish Relationships menu](docs/images/relationships-locator-spanish.png)
+
+*Compact location control in Relationships / Control compacto de ubicación en Relaciones.*
+
 ---
 
 ## English
