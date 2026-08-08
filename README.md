@@ -10,6 +10,10 @@
 
 *Compact location control in Relationships / Control compacto de ubicación en Relaciones.*
 
+![Find My Mistrian showing the Locate Celine action in an active Spanish quest](docs/images/quest-locator-spanish.png)
+
+*The locator also appears for actionable NPC quest objectives / El localizador también aparece en objetivos ejecutables de Misiones que apuntan a un NPC.*
+
 ---
 
 ## English
