@@ -9,7 +9,9 @@ The mod reads `NPCS[npc_id].location_position`, the same current-state data used
 - Fields of Mistria 1.0.x
 - MOMI/MMAPI 0.14.1 or newer
 
-Development and automated install validation were performed against Fields of Mistria 1.0.2 and MOMI commit `b451d4ae52d688be2199613a61ccd6657de0e211` (0.14.1+ documentation/API).
+Development and automated install validation were performed against Fields of Mistria 1.0.2 and MOMI 0.15.1.
+
+Full documentation is available in English and Spanish in the [project README](../README.md).
 
 ## Installation
 
