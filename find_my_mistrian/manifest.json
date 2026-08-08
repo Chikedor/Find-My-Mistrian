@@ -1,8 +1,8 @@
 {
   "name": "Find My Mistrian",
   "author": "Chikedor",
-  "version": "0.1.0",
-  "description": "Shows the live in-game location of known villagers and can highlight them on the map.",
+  "version": "0.2.0",
+  "description": "Locates known villagers from Relationships and active NPC quest objectives.",
   "minInstallerVersion": "0.14.1",
   "manifestVersion": 1,
   "requires_hooks": [

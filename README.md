@@ -12,8 +12,9 @@
 
 ### Features
 
-- Shows the selected character's **current in-game location** on the Relationships page.
-- Adds a **Locate on map** button that opens the correct map region.
+- Shows a compact, clickable **location button beneath the portrait** on the Relationships page.
+- Adds a **Locate NPC** button to an active quest when its current, actionable objective targets a known character.
+- Opens the correct map region from either Relationships or Quests.
 - Pulses the character's vanilla map icon for a few seconds so it is easy to spot.
 - Adds an optional `F6` shortcut to open Relationships quickly.
 - Supports mouse, keyboard, and controller navigation.
@@ -56,8 +57,10 @@ Do not copy the repository's outer `Find-My-Mistrian` folder into `mods`. MOMI m
 1. Load a save.
 2. Press `F6`, or open **Journal → Relationships**.
 3. Select a character you have met.
-4. Their current location appears on the right-hand page.
-5. Select **Locate on map**. The appropriate map opens and the character's icon pulses for approximately four seconds.
+4. Their current location appears as a compact pin button beneath the portrait.
+5. Select the location button. The appropriate map opens and the character's icon pulses for approximately four seconds.
+
+For quests, open **Journal → Quests** and select an active quest. A compact **Locate _name_** button appears beneath the current objectives when the active objective has an actionable NPC conversation or delivery target. Collection-only and location/cutscene objectives do not show a button.
 
 Characters you have not met remain hidden according to the game's normal progression rules. If the game has no usable live position or does not currently draw that character's icon, the mod reports that the character cannot be located.
 
@@ -128,9 +131,9 @@ Set `debug_logging` to `true`, reproduce the problem, and inspect:
 
 ### Compatibility
 
-The mod decorates the vanilla Relationships and Map menus through MMAPI hooks rather than replacing their constructors. Mods that completely replace either menu's internals may still conflict.
+The mod decorates the vanilla Relationships, Quests, and Map menus through MMAPI hooks rather than replacing their constructors. Mods that completely replace those menu internals may still conflict.
 
-MOMI 0.15.1 hotkeys are keyboard-only. Controller users can navigate the Relationships list and the added **Locate on map** button, but the `F6` shortcut requires a keyboard.
+MOMI 0.15.1 hotkeys are keyboard-only. Controller users can focus the location button by moving right from the Relationships list and can navigate quest locator buttons normally, but the `F6` shortcut requires a keyboard.
 
 ### Uninstallation
 
@@ -146,7 +149,9 @@ The mod does not modify save data, so no save cleanup is required.
 
 ### Technical notes
 
-The location readout uses `NPCS[npc_id].location_position`, which is also consumed by the vanilla map. The map highlight reuses the character's existing small NPC icon and temporarily changes only its alpha; the original value is restored when the timer expires or the map closes.
+The location readout uses `NPCS[npc_id].location_position`, which is also consumed by the vanilla map. Spoiler protection uses the game's persistent `NPCS[npc_id].has_met()` state, set by vanilla after a valid first conversation—not heart level or mere presence in Relationships.
+
+Quest targets come from `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Only structured `QuestQueryType.Npc` targets whose vanilla requirements currently pass are eligible; the mod never parses localized objective text and never assumes that `npc_for_icon` is the current target. The map highlight reuses the character's existing small NPC icon and temporarily changes only its alpha; the original value is restored when the timer expires or the map closes.
 
 Automated validation against Fields of Mistria 1.0.2 completed successfully with strict linting, compile checks, and seam checks using MOMI 0.15.1.
 
@@ -156,8 +161,9 @@ Automated validation against Fields of Mistria 1.0.2 completed successfully with
 
 ### Características
 
-- Muestra la **ubicación actual dentro del juego** del personaje seleccionado en la página de Relaciones.
-- Añade un botón **Localizar en el mapa** que abre la región correcta.
+- Muestra un **botón compacto de ubicación bajo el retrato** en la página de Relaciones.
+- Añade un botón **Localizar NPC** a una misión activa cuando su objetivo actual y ejecutable apunta a un personaje conocido.
+- Abre la región correcta del mapa desde Relaciones o Misiones.
 - Hace parpadear durante unos segundos el icono original del personaje para encontrarlo fácilmente.
 - Añade el atajo opcional `F6` para abrir Relaciones rápidamente.
 - Admite navegación con ratón, teclado y mando.
@@ -200,8 +206,10 @@ No copies la carpeta exterior `Find-My-Mistrian` del repositorio dentro de `mods
 1. Carga una partida.
 2. Pulsa `F6` o abre **Diario → Relaciones**.
 3. Selecciona un personaje que ya hayas conocido.
-4. Su ubicación actual aparecerá en la página derecha.
-5. Selecciona **Localizar en el mapa**. Se abrirá el mapa correspondiente y el icono del personaje parpadeará durante unos cuatro segundos.
+4. Su ubicación actual aparecerá como un botón compacto con pin bajo el retrato.
+5. Selecciona el botón de ubicación. Se abrirá el mapa correspondiente y el icono del personaje parpadeará durante unos cuatro segundos.
+
+Para las misiones, abre **Diario → Misiones** y selecciona una misión activa. Aparecerá un botón compacto **Localizar a _nombre_** debajo de los objetivos actuales cuando el objetivo activo tenga una conversación o entrega ejecutable con un NPC. Los objetivos que solo requieren recolectar objetos o acudir a una ubicación/cutscene no muestran el botón.
 
 Los personajes que aún no conoces permanecen ocultos conforme a las reglas normales de progreso. Si el juego no dispone de una posición válida en ese momento o no dibuja el icono del personaje, el mod indicará que no puede localizarlo.
 
@@ -272,9 +280,9 @@ Cambia `debug_logging` a `true`, reproduce el problema y revisa:
 
 ### Compatibilidad
 
-El mod decora los menús originales de Relaciones y Mapa mediante hooks de MMAPI, sin reemplazar sus constructores. Aun así, puede entrar en conflicto con mods que sustituyan por completo el funcionamiento interno de cualquiera de esos menús.
+El mod decora los menús originales de Relaciones, Misiones y Mapa mediante hooks de MMAPI, sin reemplazar sus constructores. Aun así, puede entrar en conflicto con mods que sustituyan por completo el funcionamiento interno de esos menús.
 
-Los atajos de MOMI 0.15.1 solo admiten teclado. Los usuarios de mando pueden navegar por la lista de Relaciones y el botón **Localizar en el mapa**, pero el atajo `F6` requiere un teclado.
+Los atajos de MOMI 0.15.1 solo admiten teclado. Con mando se puede enfocar el botón de ubicación moviéndose a la derecha desde la lista de Relaciones y navegar normalmente por los localizadores de Misiones, pero el atajo `F6` requiere un teclado.
 
 ### Desinstalación
 
@@ -290,7 +298,9 @@ El mod no modifica las partidas guardadas, por lo que no es necesario limpiarlas
 
 ### Notas técnicas
 
-La ubicación utiliza `NPCS[npc_id].location_position`, el mismo estado que consulta el mapa original. El resaltado reutiliza el icono pequeño existente del personaje y solo modifica temporalmente su opacidad; el valor original se restaura al terminar el tiempo o cerrar el mapa.
+La ubicación utiliza `NPCS[npc_id].location_position`, el mismo estado que consulta el mapa original. La protección contra spoilers usa el estado persistente `NPCS[npc_id].has_met()`, que vanilla activa después de una primera conversación válida; no usa los corazones ni la mera presencia en Relaciones.
+
+Los objetivos de misión proceden de `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Solo se admiten objetivos estructurados `QuestQueryType.Npc` cuyos requisitos vanilla ya se cumplen; el mod nunca analiza el texto traducido del objetivo ni presupone que `npc_for_icon` sea el personaje actual. El resaltado reutiliza el icono pequeño existente del personaje y solo modifica temporalmente su opacidad; el valor original se restaura al terminar el tiempo o cerrar el mapa.
 
 La validación automatizada contra Fields of Mistria 1.0.2 terminó correctamente con linting estricto, comprobación de compilación y verificación de puntos de inserción mediante MOMI 0.15.1.
 
