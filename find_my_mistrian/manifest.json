@@ -1,0 +1,12 @@
+{
+  "name": "Find My Mistrian",
+  "author": "Chikedor",
+  "version": "0.1.0",
+  "description": "Shows the live in-game location of known villagers and can highlight them on the map.",
+  "minInstallerVersion": "0.14.1",
+  "manifestVersion": 1,
+  "requires_hooks": [
+    "ui.menu_opened",
+    "ui.menu_closed"
+  ]
+}

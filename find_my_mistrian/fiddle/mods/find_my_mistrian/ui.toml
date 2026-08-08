@@ -1,0 +1,4 @@
+find_character = "Find character"
+current_location = "Current location"
+locate_on_map = "Locate on map"
+cannot_locate = "Cannot locate this character right now"

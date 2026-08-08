@@ -1,0 +1,5 @@
+[asset_properties]
+"mods/find_my_mistrian/ui/find_character" = "Buscar personaje"
+"mods/find_my_mistrian/ui/current_location" = "Ubicación actual"
+"mods/find_my_mistrian/ui/locate_on_map" = "Localizar en el mapa"
+"mods/find_my_mistrian/ui/cannot_locate" = "No se puede localizar a este personaje en este momento"
