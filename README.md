@@ -24,7 +24,7 @@
 - Adds a **Locate NPC** button to an active quest when its current, actionable objective targets a known character.
 - Opens the correct map region from either Relationships or Quests.
 - Pulses the character's vanilla map icon for a few seconds so it is easy to spot.
-- Adds an optional `F6` shortcut to open Relationships quickly.
+- Adds an optional configurable shortcut to open Relationships quickly (`F6` by default), with keyboard, controller, and compound-binding support.
 - Supports mouse, keyboard, and controller navigation.
 - Includes English and Spanish interface text.
 - Uses live game state—the same location data used by the vanilla map—instead of bundled or predicted schedules.
@@ -33,9 +33,9 @@
 ### Requirements
 
 - [Fields of Mistria](https://www.fieldsofmistria.com/) 1.0.x
-- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.14.1 or newer
+- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.5 or newer
 
-The mod was developed for Fields of Mistria 1.0.2 and validated with MOMI 0.15.1.
+Version 0.2.3 was validated against Fields of Mistria 1.0.3 (Steam build 24742087) with MOMI 0.15.5.
 
 ### Installation
 
@@ -98,7 +98,7 @@ Default configuration:
 | `enabled` | Enables or disables the mod without uninstalling it. |
 | `highlight_duration` | Icon pulse duration, from 1 to 10 seconds. |
 | `open_map_after_locating` | Opens the map automatically after selecting the locate button. |
-| `hotkey` | A single MMAPI key name, such as `F6` or `HOME`. |
+| `hotkey` | An MMAPI keyboard, controller, or compound binding such as `F6`, `GAMEPAD_Y`, `SHIFT+F6`, or `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
 | `debug_logging` | Immediately writes each locate attempt and highlight lifecycle to the mod log when set to `true`. |
 
 Close the game before editing the configuration file.
@@ -143,7 +143,7 @@ The log records whether the action came from Relationships or Quests, the NPC an
 
 The mod decorates the vanilla Relationships, Quests, and Map menus through MMAPI hooks rather than replacing their constructors. Mods that completely replace those menu internals may still conflict.
 
-MOMI 0.15.1 hotkeys are keyboard-only. Controller users can focus the location button by moving right from the Relationships list and can navigate quest locator buttons normally, but the `F6` shortcut requires a keyboard.
+MOMI 0.15.2 introduced keyboard, controller, and compound hotkey bindings; this release requires 0.15.5 for the current Fields of Mistria 1.0.3 hotfix. `GAMEPAD_A/B/X/Y` follow Xbox button positions, so the printed label may differ on other controller layouts. Controller users can also focus the location button by moving right from the Relationships list and navigate quest locator buttons normally.
 
 ### Uninstallation
 
@@ -165,7 +165,7 @@ Quest targets come from `QUEST_LOG.active[quest].quest.tasks[current_stage].quer
 
 After a map-region change, icon resolution is deferred until vanilla's replacement tree contains exactly one stable, non-freed match. The mod retries for up to 30 frames, avoids rebuilding a region that is already selected, and reacquires the live icon if vanilla replaces it during the pulse. This prevents stale duplicate icons from terminating the highlight immediately.
 
-Automated validation against Fields of Mistria 1.0.2 completed successfully with strict linting, compile checks, and seam checks using MOMI 0.15.1.
+Automated validation against Fields of Mistria 1.0.3 (Steam build 24742087) completed successfully with strict linting and required compile checks using MOMI 0.15.5.
 
 ---
 
@@ -177,7 +177,7 @@ Automated validation against Fields of Mistria 1.0.2 completed successfully with
 - Añade un botón **Localizar NPC** a una misión activa cuando su objetivo actual y ejecutable apunta a un personaje conocido.
 - Abre la región correcta del mapa desde Relaciones o Misiones.
 - Hace parpadear durante unos segundos el icono original del personaje para encontrarlo fácilmente.
-- Añade el atajo opcional `F6` para abrir Relaciones rápidamente.
+- Añade un atajo configurable para abrir Relaciones rápidamente (`F6` de forma predeterminada), compatible con teclado, mando y combinaciones.
 - Admite navegación con ratón, teclado y mando.
 - Incluye textos de interfaz en inglés y español.
 - Utiliza el estado actual del juego —los mismos datos de ubicación que emplea el mapa original— en vez de horarios incluidos o estimados.
@@ -186,9 +186,9 @@ Automated validation against Fields of Mistria 1.0.2 completed successfully with
 ### Requisitos
 
 - [Fields of Mistria](https://www.fieldsofmistria.com/) 1.0.x
-- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.14.1 o posterior
+- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.5 o posterior
 
-El mod fue desarrollado para Fields of Mistria 1.0.2 y validado con MOMI 0.15.1.
+La versión 0.2.3 se validó con Fields of Mistria 1.0.3 (compilación 24742087 de Steam) y MOMI 0.15.5.
 
 ### Instalación
 
@@ -251,7 +251,7 @@ Configuración predeterminada:
 | `enabled` | Activa o desactiva el mod sin desinstalarlo. |
 | `highlight_duration` | Duración del parpadeo del icono, entre 1 y 10 segundos. |
 | `open_map_after_locating` | Abre el mapa automáticamente al seleccionar el botón de localización. |
-| `hotkey` | Nombre de una sola tecla de MMAPI, como `F6` o `HOME`. |
+| `hotkey` | Atajo MMAPI de teclado, mando o combinación, como `F6`, `GAMEPAD_Y`, `SHIFT+F6` o `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
 | `debug_logging` | Escribe inmediatamente cada intento de localización y el ciclo del resaltado cuando su valor es `true`. |
 
 Cierra el juego antes de editar el archivo de configuración.
@@ -296,7 +296,7 @@ El registro indica si la acción procede de Relaciones o Misiones, el NPC y la r
 
 El mod decora los menús originales de Relaciones, Misiones y Mapa mediante hooks de MMAPI, sin reemplazar sus constructores. Aun así, puede entrar en conflicto con mods que sustituyan por completo el funcionamiento interno de esos menús.
 
-Los atajos de MOMI 0.15.1 solo admiten teclado. Con mando se puede enfocar el botón de ubicación moviéndose a la derecha desde la lista de Relaciones y navegar normalmente por los localizadores de Misiones, pero el atajo `F6` requiere un teclado.
+MOMI 0.15.2 introdujo atajos de teclado, mando y combinaciones; esta versión requiere 0.15.5 para el hotfix actual de Fields of Mistria 1.0.3. `GAMEPAD_A/B/X/Y` siguen las posiciones de los botones de Xbox, por lo que la etiqueta física puede ser distinta en otros mandos. También se puede enfocar el botón de ubicación moviéndose a la derecha desde la lista de Relaciones y navegar normalmente por los localizadores de Misiones.
 
 ### Desinstalación
 
@@ -318,7 +318,7 @@ Los objetivos de misión proceden de `QUEST_LOG.active[quest].quest.tasks[curren
 
 Después de cambiar la región del mapa, la resolución del icono se aplaza hasta que el árbol nuevo de vanilla contenga una sola coincidencia estable y no liberada. El mod reintenta durante un máximo de 30 fotogramas, evita reconstruir una región que ya está seleccionada y vuelve a adquirir el icono vigente si vanilla lo reemplaza durante el pulso. Así se impide que los duplicados obsoletos terminen el resaltado inmediatamente.
 
-La validación automatizada contra Fields of Mistria 1.0.2 terminó correctamente con linting estricto, comprobación de compilación y verificación de puntos de inserción mediante MOMI 0.15.1.
+La validación automatizada contra Fields of Mistria 1.0.3 (compilación 24742087 de Steam) terminó correctamente con linting estricto y comprobación de compilación obligatoria mediante MOMI 0.15.5.
 
 ---
 

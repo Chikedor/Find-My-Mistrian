@@ -1,8 +1,8 @@
 // Find My Mistrian
-// Fields of Mistria 1.0.x / MOMI + MMAPI 0.14.1+
+// Fields of Mistria 1.0.x / MOMI + MMAPI 0.15.5+
 
 #macro FIND_MY_MISTRIAN_CONFIG_VERSION 1
-#macro FIND_MY_MISTRIAN_VERSION "0.2.2"
+#macro FIND_MY_MISTRIAN_VERSION "0.2.3"
 
 // Layout values are local to their vanilla anchors, never screen coordinates.
 #macro FMM_RELATION_LOCATION_BUTTON_HEIGHT 20
@@ -45,7 +45,7 @@ function find_my_mistrian_config() {
 
     var _source = mmapi_config_read_valid("find_my_mistrian", FIND_MY_MISTRIAN_CONFIG_VERSION);
     var _hotkey = mmapi_config_get(_source, "hotkey", "F6");
-    if (!is_string(_hotkey) || mmapi_hotkey_vk_from_name(_hotkey) == undefined) {
+    if (!is_string(_hotkey) || mmapi_hotkey_binding_from_name(_hotkey) == undefined) {
         _hotkey = "F6";
     }
 
@@ -99,9 +99,9 @@ function find_my_mistrian_tick() {
     if (!_rt.initialized) {
         _rt.initialized = true;
         var _cfg = find_my_mistrian_config();
-        var _vk = mmapi_hotkey_vk_from_name(_cfg.hotkey);
-        if (_vk != undefined) {
-            mmapi_hotkey_register(_vk, find_my_mistrian_on_hotkey);
+        var _binding = mmapi_hotkey_binding_from_name(_cfg.hotkey);
+        if (_binding != undefined) {
+            mmapi_hotkey_register_binding(_binding, find_my_mistrian_on_hotkey);
             _rt.hotkey_registered = true;
         }
         mmapi_log_info(

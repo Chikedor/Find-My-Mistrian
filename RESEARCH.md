@@ -1,12 +1,19 @@
 # Technical research notes
 
-Research date: 2026-08-08.
+Initial research date: 2026-08-08. Compatibility refresh: 2026-08-16.
 
 ## Verified targets
 
 - Fields of Mistria 1.0.2 (`FieldsOfMistria.exe` product/file version 1.0.2, Steam build 24619420).
 - MOMI stable 0.15.1, tag `v0.15.1`, commit `c57d90b785cd8546b512c1a4cc99946fd04e5318`.
 - MOMI `main` was also inspected at `b451d4ae52d688be2199613a61ccd6657de0e211`; stable-only APIs were chosen where `main` was ahead of the release.
+
+### Compatibility refresh (0.2.3)
+
+- Fields of Mistria 1.0.3 (`FieldsOfMistria.exe` product/file version 1.0.3, Steam build 24742087).
+- MOMI/MMAPI stable 0.15.5, tag `v0.15.5`, commit `9b90ee213309e7aaca5870ac43272682b6f595ad`.
+- MOMI 0.15.4 explicitly carries the 1.0.3 atlas and seam updates. The 0.15.5 hotfix changes only the `combat.damage` receiver surface; Find My Mistrian does not use that hook.
+- MOMI 0.15.2 introduced device-agnostic and compound hotkey bindings. Version 0.2.3 now validates with `mmapi_hotkey_binding_from_name()` and registers with `mmapi_hotkey_register_binding()`, retaining `F6` as the default while accepting controller buttons and chords. The manifest requires 0.15.5 because its re-anchored catalog is the minimum safe installer for the current 1.0.3 hotfix.
 
 ## Confirmed engine/API contracts
 
@@ -47,18 +54,20 @@ No schedule table, weather rule, festival rule, or NPC-location cache is used. T
 - Version 0.2.2 avoids rebuilding an already-selected region. After any selection it resolves on subsequent MMAPI ticks, ignores freed nodes, requires exactly one stable match, and retries for at most 30 frames. If vanilla invalidates the selected node later, the remaining pulse duration is transferred to a newly resolved live icon.
 - The final in-game Juniper reproduction resolved one stable match on the first deferred attempt and completed the configured pulse in 10,014 ms with `node_freed=false`.
 
-The official MOMI 0.15.1 CLI was run with:
+The official MOMI 0.15.5 CLI was run against the pristine 1.0.3 archive with:
 
 ```powershell
-ModsOfMistriaInstaller-cli.exe --lint .\find_my_mistrian C:\path\to\assets.zip --strict-lints --compile-check require
+ModsOfMistriaInstaller-cli.exe --lint C:\absolute\path\to\find_my_mistrian C:\path\to\assets.bak.zip --strict-lints --compile-check require
 ```
 
 Result:
 
 ```text
-lint chikedor.find_my_mistrian v0.2.2
+lint chikedor.find_my_mistrian v0.2.3
   gml: 1 file(s) installing under scripts/chikedor_find_my_mistrian/
   RESULT: OK - the apply would install this mod
 ```
+
+MOMI 0.15.5's folder lint currently needs an absolute mod path to detect the `gml/` tree reliably. With a relative path, `FolderMod.GetAllFiles()` returns absolute file names while `GetBasePath()` remains relative, so `GmlModCollector.RelativePath()` fails to reduce them to `gml/...` and reports a manifest-only false positive. This was reproduced with the release CLI and confirmed against tag `v0.15.5` source.
 
 Runtime scenarios in the package README remain a manual in-game checklist; compile/install validation cannot prove input feel, overlap at every UI scale, or festival-specific game state without playing a save.

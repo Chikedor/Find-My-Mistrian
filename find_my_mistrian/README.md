@@ -9,9 +9,9 @@ Map highlighting waits for the selected region's icon tree to become stable, ign
 ## Requirements
 
 - Fields of Mistria 1.0.x
-- MOMI/MMAPI 0.14.1 or newer
+- MOMI/MMAPI 0.15.5 or newer
 
-Development and automated install validation were performed against Fields of Mistria 1.0.2 and MOMI 0.15.1.
+Version 0.2.3 was validated against Fields of Mistria 1.0.3 (Steam build 24742087) and MOMI 0.15.5.
 
 Full documentation is available in English and Spanish in the [project README](../README.md).
 
@@ -51,7 +51,7 @@ Defaults:
 }
 ```
 
-`highlight_duration` accepts 1–10 seconds. `hotkey` accepts a single MMAPI key name such as `F6` or `HOME`. Set `debug_logging` to `true` to record the entry point, selected NPC, live location, map region, icon-match count, highlight lifecycle, and failure reason without logging every frame. Each locate attempt is flushed immediately to `mod_data/find_my_mistrian/logs/find_my_mistrian.log`; no global MMAPI log-level change is required.
+`highlight_duration` accepts 1–10 seconds. `hotkey` accepts a keyboard, controller, or compound MMAPI binding such as `F6`, `GAMEPAD_Y`, `SHIFT+F6`, or `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. Set `debug_logging` to `true` to record the entry point, selected NPC, live location, map region, icon-match count, highlight lifecycle, and failure reason without logging every frame. Each locate attempt is flushed immediately to `mod_data/find_my_mistrian/logs/find_my_mistrian.log`; no global MMAPI log-level change is required.
 
 ## Localization
 
@@ -60,11 +60,11 @@ The mod includes English and Spanish (`spa`) UI text. Character and location nam
 ## Compatibility and limitations
 
 - Read-only QoL/UI mod: it does not modify saves, relationships, routines, inventory, NPC positions, or gameplay.
-- Location resolution uses the exact live state used by the 1.0.2 vanilla map.
+- Location resolution uses the exact live state used by the 1.0.3 vanilla map.
 - Named subrooms use their own localized name when available. Otherwise the mod falls back to another named room in the same building, then the containing map region.
 - The highlight reuses and temporarily changes only the alpha of the vanilla NPC icon. It is restored after the configured duration and when the map closes.
 - Mods that completely replace the Relationships, Quest Log, or Map menu internals may conflict. Event-based decoration is used instead of replacing vanilla constructors.
-- A controller can move right from Relationships to the portrait locator and navigate quest locator buttons normally. MOMI 0.15.1 hotkeys are keyboard-only, so the optional shortcut remains a keyboard binding.
+- A controller can move right from Relationships to the portrait locator and navigate quest locator buttons normally. MOMI 0.15.2 introduced controller and compound hotkey bindings; this release requires 0.15.5 for the current game hotfix. Xbox button names describe physical positions on other controller layouts.
 
 ## Uninstallation
 
