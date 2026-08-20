@@ -3,3 +3,6 @@
 "mods/find_my_mistrian/ui/current_location" = "Ubicación actual"
 "mods/find_my_mistrian/ui/locate_on_map" = "Localizar en el mapa"
 "mods/find_my_mistrian/ui/cannot_locate" = "No se puede localizar a este personaje en este momento"
+"mods/find_my_mistrian/ui/unknown_location" = "Ubicación desconocida"
+"mods/find_my_mistrian/ui/locate_npc_prefix" = "Localizar a"
+"mods/find_my_mistrian/ui/on_map_suffix" = "en el mapa"
