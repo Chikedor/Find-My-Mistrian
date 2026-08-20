@@ -1,8 +1,8 @@
 // Find My Mistrian
-// Fields of Mistria 1.0.x / MOMI + MMAPI 0.15.5+
+// Fields of Mistria 1.0.x / MOMI + MMAPI 0.15.6+
 
 #macro FIND_MY_MISTRIAN_CONFIG_VERSION 1
-#macro FIND_MY_MISTRIAN_VERSION "0.2.3"
+#macro FIND_MY_MISTRIAN_VERSION "0.2.4"
 
 // Layout values are local to their vanilla anchors, never screen coordinates.
 #macro FMM_RELATION_LOCATION_BUTTON_HEIGHT 20

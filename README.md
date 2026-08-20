@@ -24,7 +24,7 @@
 - Adds a **Locate NPC** button to an active quest when its current, actionable objective targets a known character.
 - Opens the correct map region from either Relationships or Quests.
 - Pulses the character's vanilla map icon for a few seconds so it is easy to spot.
-- Adds an optional configurable shortcut to open Relationships quickly (`F6` by default), with keyboard, controller, and compound-binding support.
+- Adds a configurable shortcut to open Relationships quickly (`F6` by default), with keyboard, controller, and compound-binding support.
 - Supports mouse, keyboard, and controller navigation.
 - Includes English and Spanish interface text.
 - Uses live game state—the same location data used by the vanilla map—instead of bundled or predicted schedules.
@@ -33,9 +33,9 @@
 ### Requirements
 
 - [Fields of Mistria](https://www.fieldsofmistria.com/) 1.0.x
-- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.5 or newer
+- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.6 or newer
 
-Version 0.2.3 was validated against Fields of Mistria 1.0.3 (Steam build 24742087) with MOMI 0.15.5.
+Version 0.2.4 was validated against Fields of Mistria 1.0.4 (Steam build 24820767) with MOMI 0.15.6.
 
 ### Installation
 
@@ -62,15 +62,21 @@ Do not copy the repository's outer `Find-My-Mistrian` folder into `mods`. MOMI m
 
 ### How to use
 
+The mod is active automatically after MOMI installs it and the game starts; **pressing `F6` is not required and does not toggle the mod**. `F6` is only a shortcut that opens **Journal → Relationships**. Set `enabled` to `false` in the configuration file if you want to disable all mod features without uninstalling it.
+
 1. Load a save.
 2. Press `F6`, or open **Journal → Relationships**.
 3. Select a character you have met.
 4. Their current location appears as a compact pin button beneath the portrait.
 5. Select the location button. The appropriate map opens and the character's icon pulses for approximately four seconds.
 
-For quests, open **Journal → Quests** and select an active quest. A compact **Locate _name_** button appears beneath the current objectives when the active objective has an actionable NPC conversation or delivery target. Collection-only and location/cutscene objectives do not show a button.
+The Relationships button refreshes whenever the selected character changes. For named interiors it shows the room name; unnamed subrooms fall back to another named room in the same building and then to the containing map region.
 
-Characters you have not met remain hidden according to the game's normal progression rules. If the game has no usable live position or does not currently draw that character's icon, the mod reports that the character cannot be located.
+For quests, open **Journal → Quests** and select an active quest. A compact **Locate _name_** button appears after the current objectives and before rewards when the active objective has an actionable NPC conversation or delivery target. It updates when the quest or stage changes. Collection-only and location/cutscene objectives do not show a button, and ambiguous stages with multiple different NPC targets are deliberately ignored.
+
+Characters you have not met remain hidden according to the game's normal progression rules. For a known character with no usable display location, Relationships shows a disabled **Unknown location** button and a quest locator is disabled. If the live position becomes unavailable after activation, the mod shows **Cannot locate this character right now**. If the map opens but vanilla draws no reusable icon, the location can still be correct even though no pulse appears.
+
+If `open_map_after_locating` is `false`, selecting a locator displays an on-screen notification containing the character and current location instead. The map does not open and no icon pulse is attempted.
 
 ### Configuration
 
@@ -95,13 +101,13 @@ Default configuration:
 
 | Option | Description |
 | --- | --- |
-| `enabled` | Enables or disables the mod without uninstalling it. |
-| `highlight_duration` | Icon pulse duration, from 1 to 10 seconds. |
-| `open_map_after_locating` | Opens the map automatically after selecting the locate button. |
-| `hotkey` | An MMAPI keyboard, controller, or compound binding such as `F6`, `GAMEPAD_Y`, `SHIFT+F6`, or `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
+| `enabled` | Enables or disables every mod feature without uninstalling it. The mod is enabled automatically by default. |
+| `highlight_duration` | Icon pulse duration, from 1 to 10 seconds. It applies only when the map is opened. |
+| `open_map_after_locating` | When `true`, opens the correct map region and pulses the icon. When `false`, shows the live location in a notification instead. |
+| `hotkey` | Shortcut that opens Relationships; it does not activate or toggle the mod. Accepts an MMAPI keyboard, controller, or compound binding such as `F6`, `GAMEPAD_Y`, `SHIFT+F6`, or `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
 | `debug_logging` | Immediately writes each locate attempt and highlight lifecycle to the mod log when set to `true`. |
 
-Close the game before editing the configuration file.
+Close the game before editing the configuration file. Invalid types, out-of-range durations, and unknown hotkey names fall back to safe defaults when the configuration is loaded.
 
 ### Troubleshooting
 
@@ -143,7 +149,7 @@ The log records whether the action came from Relationships or Quests, the NPC an
 
 The mod decorates the vanilla Relationships, Quests, and Map menus through MMAPI hooks rather than replacing their constructors. Mods that completely replace those menu internals may still conflict.
 
-MOMI 0.15.2 introduced keyboard, controller, and compound hotkey bindings; this release requires 0.15.5 for the current Fields of Mistria 1.0.3 hotfix. `GAMEPAD_A/B/X/Y` follow Xbox button positions, so the printed label may differ on other controller layouts. Controller users can also focus the location button by moving right from the Relationships list and navigate quest locator buttons normally.
+MOMI 0.15.2 introduced keyboard, controller, and compound hotkey bindings; this release requires 0.15.6 because it re-anchors MMAPI for Fields of Mistria 1.0.4. `GAMEPAD_A/B/X/Y` follow Xbox button positions, so the printed label may differ on other controller layouts. Controller users can also focus the location button by moving right from the Relationships list and navigate quest locator buttons normally.
 
 ### Uninstallation
 
@@ -159,13 +165,13 @@ The mod does not modify save data, so no save cleanup is required.
 
 ### Technical notes
 
-The location readout uses `NPCS[npc_id].location_position`, which is also consumed by the vanilla map. Spoiler protection uses the game's persistent `NPCS[npc_id].has_met()` state, set by vanilla after a valid first conversation—not heart level or mere presence in Relationships.
+The location readout uses `NPCS[npc_id].location_position`, which is also consumed by the vanilla map. Display names come from vanilla localization: the exact room name is preferred, followed by a named room in the same building and then the containing map region. Spoiler protection uses the game's persistent `NPCS[npc_id].has_met()` state, set by vanilla after a valid first conversation—not heart level or mere presence in Relationships.
 
 Quest targets come from `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Only structured `QuestQueryType.Npc` targets whose vanilla requirements currently pass are eligible; the mod never parses localized objective text and never assumes that `npc_for_icon` is the current target. The map highlight reuses the character's existing small NPC icon and temporarily changes only its alpha; the original value is restored when the timer expires or the map closes.
 
 After a map-region change, icon resolution is deferred until vanilla's replacement tree contains exactly one stable, non-freed match. The mod retries for up to 30 frames, avoids rebuilding a region that is already selected, and reacquires the live icon if vanilla replaces it during the pulse. This prevents stale duplicate icons from terminating the highlight immediately.
 
-Automated validation against Fields of Mistria 1.0.3 (Steam build 24742087) completed successfully with strict linting and required compile checks using MOMI 0.15.5.
+Automated validation against Fields of Mistria 1.0.4 (Steam build 24820767) completed successfully with strict linting and required compile checks using MOMI 0.15.6.
 
 ---
 
@@ -186,9 +192,9 @@ Automated validation against Fields of Mistria 1.0.3 (Steam build 24742087) comp
 ### Requisitos
 
 - [Fields of Mistria](https://www.fieldsofmistria.com/) 1.0.x
-- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.5 o posterior
+- [Mods of Mistria Installer (MOMI/MMAPI)](https://github.com/Garethp/Mods-of-Mistria-Installer) 0.15.6 o posterior
 
-La versión 0.2.3 se validó con Fields of Mistria 1.0.3 (compilación 24742087 de Steam) y MOMI 0.15.5.
+La versión 0.2.4 se validó con Fields of Mistria 1.0.4 (compilación 24820767 de Steam) y MOMI 0.15.6.
 
 ### Instalación
 
@@ -215,15 +221,21 @@ No copies la carpeta exterior `Find-My-Mistrian` del repositorio dentro de `mods
 
 ### Cómo utilizarlo
 
+El mod se activa automáticamente después de instalarlo con MOMI e iniciar el juego; **no hace falta pulsar `F6` y esa tecla no activa ni desactiva el mod**. `F6` solo es un atajo para abrir **Diario → Relaciones**. Cambia `enabled` a `false` en la configuración si quieres desactivar todas sus funciones sin desinstalarlo.
+
 1. Carga una partida.
 2. Pulsa `F6` o abre **Diario → Relaciones**.
 3. Selecciona un personaje que ya hayas conocido.
 4. Su ubicación actual aparecerá como un botón compacto con pin bajo el retrato.
 5. Selecciona el botón de ubicación. Se abrirá el mapa correspondiente y el icono del personaje parpadeará durante unos cuatro segundos.
 
-Para las misiones, abre **Diario → Misiones** y selecciona una misión activa. Aparecerá un botón compacto **Localizar a _nombre_** debajo de los objetivos actuales cuando el objetivo activo tenga una conversación o entrega ejecutable con un NPC. Los objetivos que solo requieren recolectar objetos o acudir a una ubicación/cutscene no muestran el botón.
+El botón de Relaciones se actualiza cada vez que cambia el personaje seleccionado. En interiores con nombre muestra la habitación exacta; las subhabitaciones sin nombre usan otra habitación con nombre del mismo edificio y, como último recurso, la región del mapa que lo contiene.
 
-Los personajes que aún no conoces permanecen ocultos conforme a las reglas normales de progreso. Si el juego no dispone de una posición válida en ese momento o no dibuja el icono del personaje, el mod indicará que no puede localizarlo.
+Para las misiones, abre **Diario → Misiones** y selecciona una misión activa. Aparecerá un botón compacto **Localizar a _nombre_** después de los objetivos actuales y antes de las recompensas cuando el objetivo activo tenga una conversación o entrega ejecutable con un NPC. Se actualiza cuando cambia la misión o avanza su fase. Los objetivos que solo requieren recolectar objetos o acudir a una ubicación/cutscene no muestran el botón, y las fases ambiguas con varios NPC diferentes se ignoran deliberadamente.
+
+Los personajes que aún no conoces permanecen ocultos conforme a las reglas normales de progreso. Para un personaje conocido sin ubicación mostrable, Relaciones enseña el botón **Ubicación desconocida** desactivado y el localizador de la misión queda desactivado. Si la posición deja de estar disponible después de activar el botón, aparece **No se puede localizar a este personaje en este momento**. Si el mapa se abre pero vanilla no dibuja un icono reutilizable, la ubicación puede seguir siendo correcta aunque no haya parpadeo.
+
+Si `open_map_after_locating` está en `false`, el localizador muestra una notificación en pantalla con el personaje y su ubicación actual. No abre el mapa ni intenta hacer parpadear el icono.
 
 ### Configuración
 
@@ -248,13 +260,13 @@ Configuración predeterminada:
 
 | Opción | Descripción |
 | --- | --- |
-| `enabled` | Activa o desactiva el mod sin desinstalarlo. |
-| `highlight_duration` | Duración del parpadeo del icono, entre 1 y 10 segundos. |
-| `open_map_after_locating` | Abre el mapa automáticamente al seleccionar el botón de localización. |
-| `hotkey` | Atajo MMAPI de teclado, mando o combinación, como `F6`, `GAMEPAD_Y`, `SHIFT+F6` o `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
+| `enabled` | Activa o desactiva todas las funciones sin desinstalar el mod. Está activado automáticamente de forma predeterminada. |
+| `highlight_duration` | Duración del parpadeo del icono, entre 1 y 10 segundos. Solo se aplica cuando se abre el mapa. |
+| `open_map_after_locating` | En `true`, abre la región correcta y hace parpadear el icono. En `false`, muestra la ubicación actual como notificación. |
+| `hotkey` | Atajo que abre Relaciones; no activa ni desactiva el mod. Admite una tecla, botón de mando o combinación MMAPI, como `F6`, `GAMEPAD_Y`, `SHIFT+F6` o `GAMEPAD_LEFT_SHOULDER+GAMEPAD_A`. |
 | `debug_logging` | Escribe inmediatamente cada intento de localización y el ciclo del resaltado cuando su valor es `true`. |
 
-Cierra el juego antes de editar el archivo de configuración.
+Cierra el juego antes de editar el archivo de configuración. Los tipos incorrectos, duraciones fuera del intervalo y nombres de atajo desconocidos vuelven a valores predeterminados seguros al cargarla.
 
 ### Solución de problemas
 
@@ -296,7 +308,7 @@ El registro indica si la acción procede de Relaciones o Misiones, el NPC y la r
 
 El mod decora los menús originales de Relaciones, Misiones y Mapa mediante hooks de MMAPI, sin reemplazar sus constructores. Aun así, puede entrar en conflicto con mods que sustituyan por completo el funcionamiento interno de esos menús.
 
-MOMI 0.15.2 introdujo atajos de teclado, mando y combinaciones; esta versión requiere 0.15.5 para el hotfix actual de Fields of Mistria 1.0.3. `GAMEPAD_A/B/X/Y` siguen las posiciones de los botones de Xbox, por lo que la etiqueta física puede ser distinta en otros mandos. También se puede enfocar el botón de ubicación moviéndose a la derecha desde la lista de Relaciones y navegar normalmente por los localizadores de Misiones.
+MOMI 0.15.2 introdujo atajos de teclado, mando y combinaciones; esta versión requiere 0.15.6 porque reancla MMAPI para Fields of Mistria 1.0.4. `GAMEPAD_A/B/X/Y` siguen las posiciones de los botones de Xbox, por lo que la etiqueta física puede ser distinta en otros mandos. También se puede enfocar el botón de ubicación moviéndose a la derecha desde la lista de Relaciones y navegar normalmente por los localizadores de Misiones.
 
 ### Desinstalación
 
@@ -312,13 +324,13 @@ El mod no modifica las partidas guardadas, por lo que no es necesario limpiarlas
 
 ### Notas técnicas
 
-La ubicación utiliza `NPCS[npc_id].location_position`, el mismo estado que consulta el mapa original. La protección contra spoilers usa el estado persistente `NPCS[npc_id].has_met()`, que vanilla activa después de una primera conversación válida; no usa los corazones ni la mera presencia en Relaciones.
+La ubicación utiliza `NPCS[npc_id].location_position`, el mismo estado que consulta el mapa original. Los nombres proceden de la localización de vanilla: se prefiere la habitación exacta, después otra habitación con nombre del mismo edificio y finalmente la región del mapa que la contiene. La protección contra spoilers usa el estado persistente `NPCS[npc_id].has_met()`, que vanilla activa después de una primera conversación válida; no usa los corazones ni la mera presencia en Relaciones.
 
 Los objetivos de misión proceden de `QUEST_LOG.active[quest].quest.tasks[current_stage].query_targets`. Solo se admiten objetivos estructurados `QuestQueryType.Npc` cuyos requisitos vanilla ya se cumplen; el mod nunca analiza el texto traducido del objetivo ni presupone que `npc_for_icon` sea el personaje actual. El resaltado reutiliza el icono pequeño existente del personaje y solo modifica temporalmente su opacidad; el valor original se restaura al terminar el tiempo o cerrar el mapa.
 
 Después de cambiar la región del mapa, la resolución del icono se aplaza hasta que el árbol nuevo de vanilla contenga una sola coincidencia estable y no liberada. El mod reintenta durante un máximo de 30 fotogramas, evita reconstruir una región que ya está seleccionada y vuelve a adquirir el icono vigente si vanilla lo reemplaza durante el pulso. Así se impide que los duplicados obsoletos terminen el resaltado inmediatamente.
 
-La validación automatizada contra Fields of Mistria 1.0.3 (compilación 24742087 de Steam) terminó correctamente con linting estricto y comprobación de compilación obligatoria mediante MOMI 0.15.5.
+La validación automatizada contra Fields of Mistria 1.0.4 (compilación 24820767 de Steam) terminó correctamente con linting estricto y comprobación de compilación obligatoria mediante MOMI 0.15.6.
 
 ---
 
